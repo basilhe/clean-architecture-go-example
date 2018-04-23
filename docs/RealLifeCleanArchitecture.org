@@ -1,0 +1,312 @@
+-*- mode: Org;  -*-
+
+#+TITLE: Real Life Clean Architecture - Clean Architecture 真实体验
+
+* 古罗马斗兽场
+
+** 和 Clean Architecture 的相关性，中心向外逐级延展，大型表演场所标准架构
+
+** 作者简介
+
+*** 网络服务相关工作，所以本文采用了一个跟交换机相关的例子
+
+* Why Clean Architecture?
+** 免责声明（为什么这样声明？说明现状？）
+
+*** 微服务，正常的应用
+
+*** 一种方式（过去一直做的某种方式）
+    
+**** 实用主义、折中
+
+** 架构常见问题
+
+*** 过早决定：经常在项目之初，对要解决的问题还知之甚少的时候就决定了
+
+*** 改变困难：有新需求的时候我们是 hack 原来的代码还是花大力气重新设计？我们通常都知道选择哪一种比较省事！好的架构应该能让我们改变主意
+
+*** 以框架为中心，（一眼看去，能看出是什么框架，却看不出业务逻辑）：框架是工具，不是架构；框架需要你迎合它们而不是它们迎合你，你只能跟随
+
+*** 以数据库为中心：我们经常想到的是先设计数据库，然后 CRUD，到处是数据库表、行列对象，而不是业务逻辑
+
+*** 专注于技术： 我们经常使用技术语言描述架构，这是一个 Go 语言开发的使用 Gin 框架和 MongoDB 开发的 Web 应用，而不是系统提供什么功能
+
+*** 找业务相关代码困难，找问题困难：做一些改动时间很长很痛苦
+
+*** 业务逻辑分散到各个角落：代码分散到不同层，为了检查一处改动需要调试整个系统，更糟糕的是，一个代码块复制了好多地方，需要做很多修改和检查
+
+*** 测试困难，过程很长很慢：经常跑整个UI流程是我们唯一的测试选择，而且UI层包含很多业务逻辑，这使得测试很慢很重很脆弱，导致没有人愿意运行它也很容易出各种问题
+
+*** 不能频繁部署：改动困难，只能通过一个包含很多功能的大分支并且只在最后才做一个大的集成和发布
+
+** 为什么会出现这些问题？
+
+*** 应用的核心不应该是数据库、或者你用到的哪些框架
+
+*** 应用的核心应该是用例
+
+** Clean Architecture 是如何解决这些问题的
+
+*** Clean Architecture 长什么样子的？ 回想一下古罗马斗兽场
+
+*** 依赖规则，从外向内单向依赖，外圈不能影响内圈
+
+*** Entities 封装了企业范围的业务对象和规则，相对固定（数据）
+
+*** Use Cases 封装了业务逻辑，控制数据的流动、应用相关规则来达到某些目标（算法）
+
+*** Interface Adapter 接口适配器，以合适的格式和形式与用户（通过Web,MVC）或外部存储（数据库,SQL）进行输入输出并进行格式转换以便和与核心区进行数据交换、启动案例
+
+**** Web、Mobile、Desktop、Commandline 各种用户接口
+
+**** 关系型数据库、非关系型数据库、文件存储各种数据存储接口
+
+**** 外部服务等各种外部依赖
+
+*** Frameworks and Drivers 数据库、Web Framework、细节都隐藏在这里，通过 glue code 胶水代码和内层进行交互
+*** 跨越边界的是简单的 DTO 对象，不能直接把内圈的数据（比如数据库 RowSet)传到外圈，那样破坏了依赖规则，而是通过 Interface Adapter 进行转换
+
+** Clean Architecture 有什么好处？
+
+*** 独立于框架、工具、数据库
+
+*** 可测试，业务规则可以独立于 UI、Database、Web Server、外部依赖进行测试
+
+*** 独立于 UI，Web UI 可以替换为 Console UI，可核心逻辑不需要跟着变化
+
+*** 独立于数据库，可以使用关系型数据库、非关系型数据库或其他，数据库的变更不改变核心逻辑
+
+*** 独立于任何外部依赖
+
+** The End，问题和解决方案介绍完了，然后这才正式开始
+
+* 样本项目
+
+** Git 地址
+
+** ISP 网络服务供应商
+
+*** Entities，电话交换机、宽带访问设备
+
+*** Use Cases，获取交换机容量、或者设备细节、设备同步
+
+** Our Clean Architecture
+
+*** REST API、定时任务、网络服务、数据库、配置，中间是业务逻辑
+
+** Uncle Bob Style
+
+*** 圆形表示示意图
+
+* 项目结构
+
+** acceptance-tests、application（configuration、core、dataproviders、entrypoints）、integration-tests
+
+** Entity
+
+*** 列表
+
+*** 样本1、样本2
+
+*** 说明：领域对象（交换机、宽带设备），对象规范（业务规则，如 hostname 格式、serialNumber 格式）、类型化（比如 HostName 类而不是直接使用 String)、POJO(No Framework)
+**** 代表领域对象
+**** 只包含实体的规则逻辑，比如用于 HostName 格式验证
+**** POJO，简单对象
+
+** Use Cases
+
+*** Use Cases 和它的外部接口适配器
+
+*** GetCapacityForExchangeUseCase 举例（两个外部 DataProviders), Fibre(光纤）,ADSL
+
+*** 相关外部接口和异常的定义
+
+*** 说明：
+
+**** 纯业务逻辑，算法
+
+**** 定义需要的数据接口
+
+**** 使用 Entities 和 DataProviders
+
+**** 抛出业务相关的异常
+
+**** 不受数据库和表示层的影响
+
+**** POJO (No Frameworks)
+
+**** 我们喜欢单方法接口，接口隔离
+
+** Data Provider
+
+*** Database、FileSystem、Network Devices
+
+*** Data Provider 包结构
+
+*** 数据库举例
+
+*** 网络服务举例
+
+*** 说明
+
+**** 实现用例中定义的接口，比如获取设备的序列号
+
+**** 隐藏数据来源的细节（数据库配置，网络信息等配置，留到 Configuration）
+
+**** 实现 Use Case 定义的数据接口，可以有多个实现（基于数据库、文件系统或者内存实现）
+
+**** 使用合适的框架、库
+
+**** 如果使用 ORM ，你需要重新设计针对数据库的 entities，隔离 business entities
+
+** Entrypoint（REST API、Jobs 定时任务）
+
+** 包结构
+
+** RestController 举例
+
+** Job 举例
+
+** 说明
+
+*** 启动案例，跟系统交互的方法（REST、Scheduled Jobs、GUI、其他系统）
+
+*** 没有业务逻辑
+
+*** 拥有转换逻辑， DTO <-> Entities
+
+*** 隐藏所有交付机制的细节
+
+*** GUI 是一个 Entrypoint
+
+*** 使用合适的框架/库
+
+** Configuration 配置
+
+*** 包结构
+
+*** 配置接口对应的实例，Webserver细节
+
+*** 说明
+
+**** 把所有的东西连接起来
+
+**** 隔离隐藏框架（只在这里使用 Spring Boot)
+
+**** 隐藏让所有东西工作起来的“脏”细节，如数据源、Web服务器配置等
+
+** 最终流程举例
+
+*** Get Capacity
+
+*** Reconsile Devices
+
+* 测试策略
+
+** Coverage & Cost
+
+** Unit Tests - TDD、Acceptance Tests - BDD、Integration Tests、End-to-End Tests、Manual Tests
+
+*** 面向技术与代码，Are we building the system right? 战术上是否正确？
+*** xUnit
+** Acceptance Tests - BDD
+*** 面向业务，Are we building the right system? 战略上是否正确？
+*** Cucumber、 FitNesse
+** Integration Tests
+*** 
+** End-to-End Tests
+** 其他趣谈升值驱动式开发
+*** 混蛋驱动开发(Asshole DD) - 混蛋先生做所有的决定
+*** Cognitive Dissonance development (CDD) - 认知紊乱开发，团队有分歧
+*** Cover Your Ass Engineering (CYAE) - 欲盖弥彰式开发
+*** Development By Denial (DBD) - 视而不见式开发
+*** Get Me Promoted Methodology (GMPM) - 升值驱动式开发
+** Unit Tests 单元测试
+*** 无处不在，但只在单元内部进行
+*** 外部依赖如何处理？ 抽象接口；Mock 或 内存实现
+** Unit Tests 举例
+*** class under test
+*** mock dependencies
+*** explicit name
+*** 规则： Given（前置条件）, When（动作）, Then（断言） 三部曲
+** Unit Tests 说明 
+*** TDD, Test First, to driven design，面向开发人员
+*** Cover every little detail, 追求 100% 测试覆盖率
+*** Dev-to-Dev Doc，作为开发文档，说明类做了什么事情
+*** 测试单个类，速度非常快
+** Acceptance Tests 功能测试、接收测试
+*** 业务需求，只在核心区域，目标是 Use Cases，面向客户、测试人员和开发者
+*** @Notes、@LinkingNote
+*** 测试结果，以业务语言进行描述
+*** 参考： https://cucumber.io/docs/reference, http://fitnesse.org/
+** Acceptance Tests 说明
+*** BDD，业务会话，采用业务语言进行描述
+*** 示例业务需求，旨在覆盖业务场景
+*** 业务文档，说明系统做了什么
+*** 测试案例是隔离的，速度非常快，没有 UI、没有数据库等外部依赖
+*** 使用你喜欢的 BDD 框架，Yatspec、Cucumber、FitNesse
+** Integration Tests 集成测试
+*** 主要位于外部交互处、举例
+*** 说明
+**** 比较慢的外部部分进行集成测试，如 Http、Database
+**** 开发文档，是否工作正常
+**** 一次只测一层，要么 REST Endpoints 集成测试，要么 DataProvider 集成测试
+**** 使用任何库使其变得简单，如 Mock 或内存数据库
+** End-to-End Tests
+*** 整体性测试，穿越火线
+*** 说明：
+**** 只测试关键路径，主流程
+**** 示例业务端到端需求
+**** 启动整个应用，非常慢，这部分应该尽量少
+**** 工具链， Selenium
+* Clean Architecture 给我们带来什么好处？
+** Clean Architecture 关于测试方面的优势
+**** 有效的测试策略
+**** 分层隔离带来的易测试性，快速可靠
+**** 通过行之有效的测试金字塔，解决了测试困难
+** Clean Architecture 关于框架的优势
+*** 框架是隔离的，跟业务不耦合
+*** 框架是在某个独立的模块内使用，容易替换，延迟技术决策
+*** 框架隔离示意图
+*** 解决了以框架为中心的问题
+** Clean Architecture 关于数据库的优势
+*** 独立于数据库，数据库只是一种 DataProvider，我们构建的真实的用例而不是 CRUD
+*** 说明：
+**** No CRUD! 业务操作驱动
+**** RESTful style 读取数据库
+**** 自定义业务操作的端点
+**** 解决了以数据库为中心的问题
+** Clean Architecture 关于 Screaming Architecture（尖叫、直观、呼之欲出的架构） 的优势
+*** 目标用法非常直观
+*** 核心结构示例图，一看就知道是什么系统（跟技术无关，没有技术框架细节）
+*** 很容易查找核心业务，解决了找东西困难的问题
+** Clean Architecture 结构清晰的优势
+*** 所有的业务逻辑在用例里面，隔离了技术细节
+*** 解决了业务逻辑散落各地的问题
+** Clean Architecture 模块化优势
+*** 模块化让你很难做错误的事情
+*** 模块化隔离变化，强化编译依赖
+** Clean Architecture Always Ready
+*** 随时可以发布，真正的持续集成
+*** 解决了不能频繁发布的问题（主要是难于理解业务、定位问题以及测试验证）
+** Clean Architecture 协作优势
+*** 并行开发
+*** 定义接口，单独测试，单独集成
+*** 解决了分工协作问题
+** Clean Architecture 不错的单体应用
+*** 一个好的单体应用是一个好的开始
+*** 边界清晰
+*** 微服务也是一个单体应用，彼此之间通过外部接口依赖合作
+*** 清晰的用例有助于以后拆分为微服务，在时机合适的时候
+* Clean Architecture 的代价
+** Clean Architecture 代码冗余的缺点
+*** Entities 会有冗余，但业务逻辑只在核心不会冗余；在边界处进行转换，会有代码冗余
+*** JSON - Web 的实体 - Business Entities - Database Entities
+*** 务实的态度，这是可以接收的甚至是必须的，为了得到架构的好处所需付出的一些代价
+*** 通过 Entities 的冗余达到层之间的解耦
+** Clean Architecture 需要业务逻辑的缺点
+*** 需要有趣的业务逻辑
+*** 如果业务逻辑太简单，两行代码搞定，那么这样的架构就会显得比较重
+* 关键卖点
+** The center of your application is the use cases of your application - Uncle Bob
+* 其他相关资源列表
