@@ -125,7 +125,8 @@ go get github.com/mattn/go-sqlite3
 ```
 * testing the application:
 ```
-cd application/core/usecase/exchange && godog && go test
+cd acceptance-tests/businessrequirements/exchange && godog
+cd application/core/usecase && go test ./...
 ```
 * running the application (on the fly):
 ```
